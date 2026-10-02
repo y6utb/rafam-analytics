@@ -31,6 +31,8 @@ h1{margin:0;font-size:clamp(23px,3vw,31px);font-weight:800;letter-spacing:.01em}
 .f{display:grid;gap:5px}
 .f>span,.f>label>span{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
 select.ctl{background:var(--frame-ink);color:var(--ink);border:0;border-radius:6px;padding:6px 28px 6px 10px;font-weight:700;font-size:13.5px}
+input.ctl{background:var(--frame-ink);color:var(--ink);border:0;border-radius:6px;padding:6px 10px;font-weight:700;font-size:13.5px;min-width:0}
+input.ctl[type=date]{cursor:pointer}
 .seg{display:inline-flex;border:1px solid rgba(244,239,227,.35);border-radius:6px;overflow:hidden}
 .seg button{background:transparent;border:0;padding:6px 14px;font-weight:700;font-size:13.5px;color:var(--frame-ink);cursor:pointer}
 .seg button+button{border-left:1px solid rgba(244,239,227,.25)}
@@ -93,7 +95,8 @@ svg text{font-family:var(--font)}
     <span class="stamp" id="stamp"></span>
   </div>
   <div class="filters">
-    <div class="f"><label for="f-period"><span>Период</span></label><select class="ctl" id="f-period"></select></div>
+    <div class="f"><label for="f-from"><span>С</span></label><input class="ctl" id="f-from" type="date"></div>
+    <div class="f"><label for="f-to"><span>По</span></label><input class="ctl" id="f-to" type="date"></div>
     <div class="f"><label for="f-city"><span>Город</span></label><select class="ctl" id="f-city"></select></div>
     <div class="f"><label for="f-cat"><span>Категория</span></label><select class="ctl" id="f-cat"></select></div>
     <div class="f"><span>Разрез</span><div class="seg" id="f-tab" role="group" aria-label="Вкладка">
@@ -125,7 +128,7 @@ const fmtMl=v=>(v==null?"—":(Math.round(v*10)/10).toLocaleString("ru-RU"));
 const dfmt=iso=>iso.split("-").reverse().join(".");
 const cityName=ci=>ci>=0?CITIES[ci]:"—";
 
-const st={period:"d:"+(DAYS.length-1),city:"",cat:"",tab:"points"};
+const st={from:DAYS[DAYS.length-1],to:DAYS[DAYS.length-1],city:"",cat:"",tab:"points"};
 let showDelta=false;
 
 // --- tooltip ---
@@ -135,27 +138,24 @@ function tipHide(){tip.style.display="none"}
 function bindTip(node,html){node.addEventListener("mousemove",e=>tipShow(html,e.clientX,e.clientY));node.addEventListener("mouseleave",tipHide)}
 
 function initFilters(){
-  const p=$("#f-period");
-  DAYS.forEach((iso,i)=>p.append(el("option",{value:"d:"+i},dfmt(iso))));
-  if(DAYS.length>=2)p.append(el("option",{value:"last2"},"Последние 2 дня"));
-  if(DAYS.length>=3)p.append(el("option",{value:"last3"},"Последние 3 дня"));
-  p.append(el("option",{value:"all"},`Весь период (${DAYS.length} дн.)`));
-  p.value=st.period;
+  const from=$("#f-from"),to=$("#f-to");
+  from.min=to.min=DAYS[0];from.max=to.max=DAYS[DAYS.length-1];
+  from.value=st.from;to.value=st.to;
+  from.onchange=()=>{st.from=from.value||DAYS[0];render()};
+  to.onchange=()=>{st.to=to.value||DAYS[DAYS.length-1];render()};
   const c=$("#f-city");c.append(el("option",{value:""},"Все города"));CITIES.forEach(x=>c.append(el("option",{value:x},x)));
   const k=$("#f-cat");k.append(el("option",{value:""},"Все категории"));CATS.forEach(x=>k.append(el("option",{value:x},x)));
-  p.onchange=()=>{st.period=p.value;render()};
   c.onchange=()=>{st.city=c.value;render()};
   k.onchange=()=>{st.cat=k.value;render()};
   $("#f-tab").querySelectorAll("button").forEach(b=>b.onclick=()=>{st.tab=b.dataset.tab;$("#f-tab").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
 }
 
-function selDays(){const v=st.period,n=DAYS.length;
-  if(v==="all")return [...Array(n).keys()];
-  if(v==="last2")return [n-2,n-1].filter(i=>i>=0);
-  if(v==="last3")return [n-3,n-2,n-1].filter(i=>i>=0);
-  return [+v.split(":")[1]];}
-const isSingle=()=>st.period.startsWith("d:");
-const periodLabel=()=>{const d=selDays();return d.length===1?dfmt(DAYS[d[0]]):dfmt(DAYS[d[0]])+"–"+dfmt(DAYS[d[d.length-1]])};
+function selDays(){let a=st.from,b=st.to;if(a>b){const t=a;a=b;b=t}
+  const d=[];DAYS.forEach((iso,i)=>{if(iso>=a&&iso<=b)d.push(i)});return d;}
+const isSingle=()=>selDays().length===1;
+function periodLabel(){const d=selDays();
+  if(!d.length)return dfmt(st.from)+"–"+dfmt(st.to)+" (нет данных)";
+  return d.length===1?dfmt(DAYS[d[0]]):dfmt(DAYS[d[0]])+"–"+dfmt(DAYS[d[d.length-1]]);}
 
 // агрегируем точки по набору дней: выручка/маржа/план — сумма, остатки — на последний день периода
 function aggStores(dset,city){
