@@ -410,13 +410,25 @@ function renderPnl(){
   ctl.append(selCtl("Уровень",[{v:"УК",t:"Вся УК"},{v:"Кластер",t:"Кластер"},{v:"Точка",t:"Точка"}],st.pnlLevel,
     v=>{st.pnlLevel=v;const e=pnlEnts(v);if(v!=="УК"&&e.length)st.pnlId=e[0].id;renderPnl()}));
   let eid="uk";
-  if(st.pnlLevel!=="УК"){
-    const ents=pnlEnts(st.pnlLevel);
+  if(st.pnlLevel==="Кластер"){
+    const ents=pnlEnts("Кластер").slice().sort((a,b)=>a.name.localeCompare(b.name,"ru"));
     if(!ents.some(e=>e.id===st.pnlId))st.pnlId=ents[0].id;
     eid=st.pnlId;
-    ctl.append(selCtl(st.pnlLevel==="Точка"?"Точка":"Кластер",
-      ents.map(e=>({v:e.id,t:e.level==="Точка"?(e.cluster+" — "+e.name):e.name})),st.pnlId,
-      v=>{st.pnlId=v;renderPnl()}));
+    ctl.append(selCtl("Кластер",ents.map(e=>({v:e.id,t:e.name})),st.pnlId,v=>{st.pnlId=v;renderPnl()}));
+  } else if(st.pnlLevel==="Точка"){
+    const ents=pnlEnts("Точка");
+    if(!ents.some(e=>e.id===st.pnlId))st.pnlId=ents[0].id;
+    eid=st.pnlId;
+    const byCl={};ents.forEach(e=>{(byCl[e.cluster]=byCl[e.cluster]||[]).push(e)});
+    const w=el("div",{class:"f"});w.append(el("span",null,"Точка (по кластерам)"));
+    const s=el("select");s.setAttribute("style",SEL_STYLE);
+    Object.keys(byCl).sort((a,b)=>a.localeCompare(b,"ru")).forEach(cl=>{
+      const og=document.createElement("optgroup");og.label=cl;
+      byCl[cl].slice().sort((a,b)=>a.name.localeCompare(b.name,"ru")).forEach(e=>{
+        const op=el("option",{value:e.id},e.name);if(e.id===st.pnlId)op.selected=true;og.append(op);});
+      s.append(og);});
+    s.onchange=()=>{st.pnlId=s.value;renderPnl()};
+    w.append(s);ctl.append(w);
   }
   ctl.append(selCtl("Месяц (для графиков)",PN.months.map(m=>({v:m,t:m})),st.pnlMonth,v=>{st.pnlMonth=v;renderPnl()}));
   root.append(ctl);
