@@ -121,16 +121,11 @@ table.pnl tr.net td.selm{background:#E3D8BA}
       <div class="f"><label for="f-city"><span>Город</span></label><select class="ctl" id="f-city"></select></div>
       <div class="f"><label for="f-cat"><span>Категория</span></label><select class="ctl" id="f-cat"></select></div>
     </div>
-    <div class="f"><span>Разрез</span><div class="seg" id="f-tab" role="group" aria-label="Вкладка">
-      <button type="button" data-tab="points" aria-pressed="true">Точки</button>
-      <button type="button" data-tab="cities" aria-pressed="false">Города</button>
-    </div></div>
   </div>
 </header>
 <main class="panel">
   <div class="scope-line"><h2 id="scope-title"></h2><p id="scope-sub"></p></div>
   <section id="tab-points" class="sec"></section>
-  <section id="tab-cities" class="sec"></section>
   <section id="tab-pnl" class="sec"></section>
 </main>
 <p class="foot" id="foot"></p>
@@ -173,7 +168,6 @@ function initFilters(){
   const k=$("#f-cat");k.append(el("option",{value:""},"Все категории"));CATS.forEach(x=>k.append(el("option",{value:x},x)));
   c.onchange=()=>{st.city=c.value;render()};
   k.onchange=()=>{st.cat=k.value;render()};
-  $("#f-tab").querySelectorAll("button").forEach(b=>b.onclick=()=>{st.tab=b.dataset.tab;$("#f-tab").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
 }
 
 function selDays(){let a=st.from,b=st.to;if(a>b){const t=a;a=b;b=t}
@@ -468,14 +462,13 @@ function render(){
   $(".filters").style.display=isP?"none":"flex";
   $("#page-title").textContent=isP?"RAFAM — финансы (P&L)":"RAFAM — аналитика";
   const gp=$("#go-pnl");if(gp)gp.textContent=isP?"← Операционный дашборд":"Финансы · P&L →";
-  $("#tab-points").style.display=(!isP&&st.tab==="points")?"grid":"none";
-  $("#tab-cities").style.display=(!isP&&st.tab==="cities")?"grid":"none";
+  $("#tab-points").style.display=isP?"none":"grid";
   $("#tab-pnl").style.display=isP?"grid":"none";
   if(isP){$("#scope-title").textContent="Отчёт о прибылях и убытках";renderPnl();}
   else{
-    $("#scope-title").textContent=st.tab==="points"?"Точки":"Города";
+    $("#scope-title").textContent="Точки";
     $("#scope-sub").textContent="Период: "+periodLabel()+" · "+(st.city||"вся сеть")+" · "+(st.cat||"все категории");
-    if(st.tab==="points")renderPoints();else renderCities();
+    renderPoints();
   }
   $("#foot").textContent="RAFAM · управленческая аналитика · данные на "+DATA.asOf;
 }
