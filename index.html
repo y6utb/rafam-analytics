@@ -88,6 +88,7 @@ svg text{font-family:var(--font)}
 .tip b{font-size:14px;font-weight:800}
 .foot{color:var(--frame-ink);opacity:.8;font-size:12px;padding:14px 2px 0;text-align:center}
 .dfl{display:contents}
+.sec{display:grid;gap:16px}
 .title-side{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap}
 .pagebtn{background:var(--frame-ink);color:var(--frame-deep);border:0;border-radius:8px;padding:8px 16px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap}
 .pagebtn:hover{filter:brightness(.96)}
@@ -128,9 +129,9 @@ table.pnl tr.net td.selm{background:#E3D8BA}
 </header>
 <main class="panel">
   <div class="scope-line"><h2 id="scope-title"></h2><p id="scope-sub"></p></div>
-  <section id="tab-points" style="display:grid;gap:16px"></section>
-  <section id="tab-cities" style="display:grid;gap:16px" hidden></section>
-  <section id="tab-pnl" style="display:grid;gap:16px" hidden></section>
+  <section id="tab-points" class="sec"></section>
+  <section id="tab-cities" class="sec"></section>
+  <section id="tab-pnl" class="sec"></section>
 </main>
 <p class="foot" id="foot"></p>
 </div>
@@ -464,12 +465,12 @@ function renderPnl(){
 function render(){
   $("#stamp").textContent="Остатки и продажи на "+DATA.asOf;
   const isP=st.page==="pnl";
-  $(".filters").hidden=isP;
+  $(".filters").style.display=isP?"none":"flex";
   $("#page-title").textContent=isP?"RAFAM — финансы (P&L)":"RAFAM — аналитика";
   const gp=$("#go-pnl");if(gp)gp.textContent=isP?"← Операционный дашборд":"Финансы · P&L →";
-  $("#tab-points").hidden=isP||st.tab!=="points";
-  $("#tab-cities").hidden=isP||st.tab!=="cities";
-  $("#tab-pnl").hidden=!isP;
+  $("#tab-points").style.display=(!isP&&st.tab==="points")?"grid":"none";
+  $("#tab-cities").style.display=(!isP&&st.tab==="cities")?"grid":"none";
+  $("#tab-pnl").style.display=isP?"grid":"none";
   if(isP){$("#scope-title").textContent="Отчёт о прибылях и убытках";renderPnl();}
   else{
     $("#scope-title").textContent=st.tab==="points"?"Точки":"Города";
