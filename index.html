@@ -88,7 +88,12 @@ svg text{font-family:var(--font)}
 .tip b{font-size:14px;font-weight:800}
 .foot{color:var(--frame-ink);opacity:.8;font-size:12px;padding:14px 2px 0;text-align:center}
 .dfl{display:contents}
-.pnl-ctl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end}
+.title-side{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap}
+.pagebtn{background:var(--frame-ink);color:var(--frame-deep);border:0;border-radius:8px;padding:8px 16px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap}
+.pagebtn:hover{filter:brightness(.96)}
+.pnl-ctl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;background:var(--frame-deep);border-radius:8px;padding:12px 14px}
+.pnl-ctl .f>span{color:var(--frame-ink)}
+.pnl-ctl select{background:var(--frame-ink)!important;border:0!important}
 .note{background:var(--warn,#F6E8C9);color:#8A5B12;border-radius:6px;padding:8px 12px;font-size:12.5px;font-weight:600}
 table.pnl{width:100%;border-collapse:collapse;font-size:12.5px}
 table.pnl th,table.pnl td{padding:5px 9px;border-bottom:1px solid var(--grid);white-space:nowrap}
@@ -104,8 +109,9 @@ table.pnl tr.net td.selm{background:#E3D8BA}
 <div class="wrap">
 <header class="top">
   <div class="title-row">
-    <h1>RAFAM — аналитика</h1>
-    <span class="stamp" id="stamp"></span>
+    <h1 id="page-title">RAFAM — аналитика</h1>
+    <div class="title-side"><span class="stamp" id="stamp"></span>
+      <button type="button" id="go-pnl" class="pagebtn">Финансы · P&amp;L →</button></div>
   </div>
   <div class="filters">
     <div class="dfl" id="daily-filters">
@@ -117,7 +123,6 @@ table.pnl tr.net td.selm{background:#E3D8BA}
     <div class="f"><span>Разрез</span><div class="seg" id="f-tab" role="group" aria-label="Вкладка">
       <button type="button" data-tab="points" aria-pressed="true">Точки</button>
       <button type="button" data-tab="cities" aria-pressed="false">Города</button>
-      <button type="button" data-tab="pnl" aria-pressed="false">P&amp;L</button>
     </div></div>
   </div>
 </header>
@@ -147,7 +152,7 @@ const fmtMl=v=>(v==null?"—":(Math.round(v*10)/10).toLocaleString("ru-RU"));
 const dfmt=iso=>iso.split("-").reverse().join(".");
 const cityName=ci=>ci>=0?CITIES[ci]:"—";
 
-const st={from:DAYS[DAYS.length-1],to:DAYS[DAYS.length-1],city:"",cat:"",tab:"points",
+const st={page:"ops",from:DAYS[DAYS.length-1],to:DAYS[DAYS.length-1],city:"",cat:"",tab:"points",
           pnlLevel:"УК",pnlId:"uk",pnlMonth:(PN?PN.months[PN.months.length-1]:null)};
 let showDelta=false;
 
@@ -455,10 +460,14 @@ function renderPnl(){
 
 function render(){
   $("#stamp").textContent="Остатки и продажи на "+DATA.asOf;
-  const isP=st.tab==="pnl";
-  $("#daily-filters").hidden=isP;
-  $("#tab-points").hidden=st.tab!=="points";$("#tab-cities").hidden=st.tab!=="cities";$("#tab-pnl").hidden=!isP;
-  if(isP){$("#scope-title").textContent="P&L — прибыли и убытки";renderPnl();}
+  const isP=st.page==="pnl";
+  $(".filters").hidden=isP;
+  $("#page-title").textContent=isP?"RAFAM — финансы (P&L)":"RAFAM — аналитика";
+  const gp=$("#go-pnl");if(gp)gp.textContent=isP?"← Операционный дашборд":"Финансы · P&L →";
+  $("#tab-points").hidden=isP||st.tab!=="points";
+  $("#tab-cities").hidden=isP||st.tab!=="cities";
+  $("#tab-pnl").hidden=!isP;
+  if(isP){$("#scope-title").textContent="Отчёт о прибылях и убытках";renderPnl();}
   else{
     $("#scope-title").textContent=st.tab==="points"?"Точки":"Города";
     $("#scope-sub").textContent="Период: "+periodLabel()+" · "+(st.city||"вся сеть")+" · "+(st.cat||"все категории");
@@ -466,7 +475,7 @@ function render(){
   }
   $("#foot").textContent="RAFAM · управленческая аналитика · данные на "+DATA.asOf;
 }
-if(!PN){const b=$("#f-tab").querySelector('button[data-tab="pnl"]');if(b)b.hidden=true;}
+(function(){const gp=$("#go-pnl");if(!gp)return;if(!PN){gp.hidden=true;return;}gp.onclick=()=>{st.page=(st.page==="pnl"?"ops":"pnl");render()};})();
 initFilters();render();
 </script>
 </body></html>
