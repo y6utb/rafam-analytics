@@ -111,10 +111,12 @@ table.pnl tr.net td.selm{background:#E3D8BA}
 .fc-ttl{font-size:14px;font-weight:800;color:var(--ink)}
 .fc-pct{font-size:clamp(20px,2.4vw,28px);font-weight:800;font-variant-numeric:tabular-nums}
 .fc-pct.ok{color:var(--good)}.fc-pct.warn{color:var(--focus)}.fc-pct.low{color:var(--bad)}
+.fc-barwrap{position:relative;padding-top:15px}
 .fc-track{position:relative;background:var(--track2);border-radius:5px;height:26px;overflow:hidden}
 .fc-fill{height:100%;border-radius:5px;min-width:3px}
 .fc-fill.ok{background:var(--bar-strong)}.fc-fill.warn{background:var(--focus)}.fc-fill.low{background:var(--bad)}
-.fc-100{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.5}
+.fc-100{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed #fff;filter:drop-shadow(0 0 1px rgba(0,0,0,.65))}
+.fc-planlbl{position:absolute;top:0;transform:translateX(-50%);font-size:10.5px;font-weight:800;color:var(--ink-2);white-space:nowrap;letter-spacing:.02em}
 .fc-sub{display:flex;flex-wrap:wrap;gap:4px 20px;font-size:12.5px;color:var(--ink-2);font-weight:600}
 .fc-sub b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
 </style></head><body>
@@ -216,23 +218,33 @@ function planForecast(city){
     o.rev+=s.rev; if(s.plan!=null)o.plan=s.plan; }           // s.plan — дневной план (месячный/30)
   let mtd=0,planMonth=0,n=0;
   for(const k in by){const o=by[k]; if(o.plan!=null){mtd+=o.rev;planMonth+=o.plan*30;n++;}}
-  if(!n||planMonth<=0||!elapsed)return null;
+  const month=MONTHS_RU[mo-1];
+  if(!n||planMonth<=0||!elapsed) return {noPlan:true,month};     // плана на месяц у выбранных точек нет
   const forecast=mtd/elapsed*monthDays;
   return {mtd,forecast,planMonth,pct:forecast/planMonth*100,elapsed,monthDays,
-          rate:mtd/elapsed,month:MONTHS_RU[mo-1],latest,nStores:n};
+          rate:mtd/elapsed,month,latest,nStores:n};
 }
 function forecastBar(fc){
+  if(fc.noPlan) return el("div",{class:"forecast"},
+    el("div",{class:"fc-top"},
+      el("div",{class:"fc-ttl"},`Прогноз выполнения плана · ${fc.month}`+(st.city?" · "+st.city:"")),
+      el("div",{class:"fc-pct",style:"color:var(--muted)"},"—")),
+    el("div",{class:"empty",style:"text-align:left;padding:2px 0"},
+      `План на ${fc.month.toLowerCase()} не задан для выбранных точек`));
   const pct=fc.pct, scaleMax=Math.max(120,Math.ceil(pct/10)*10);
   const cls=pct>=100?"ok":(pct>=90?"warn":"low");
+  const markL=100/scaleMax*100;
   const t=el("div",{class:"fc-track"});
   t.append(el("div",{class:"fc-fill "+cls,style:`width:${Math.max(1,Math.min(100,pct/scaleMax*100))}%`}));
-  t.append(el("div",{class:"fc-100",style:`left:${100/scaleMax*100}%`}));   // отметка 100% (план)
+  t.append(el("div",{class:"fc-100",style:`left:${markL}%`}));              // отметка 100% (план)
+  const barwrap=el("div",{class:"fc-barwrap"},
+    el("div",{class:"fc-planlbl",style:`left:${markL}%`},"100% плана"), t);
   const left=fc.monthDays-fc.elapsed;
   return el("div",{class:"forecast"},
     el("div",{class:"fc-top"},
       el("div",{class:"fc-ttl"},`Прогноз выполнения плана · ${fc.month}`+(st.city?" · "+st.city:"")),
       el("div",{class:"fc-pct "+cls},Math.round(pct)+"%")),
-    t,
+    barwrap,
     el("div",{class:"fc-sub"},
       el("span",null,"Факт на "+dfmt(fc.latest)+": ",el("b",null,fmtRub(fc.mtd))),
       el("span",null,"Прогноз месяца: ",el("b",null,fmtRub(fc.forecast))),
