@@ -106,6 +106,17 @@ table.pnl tr.net td,table.pnl tr.net th{font-weight:800;border-top:1.5px solid v
 table.pnl td.neg{color:var(--bad)}
 table.pnl th.selm,table.pnl td.selm{background:#EDE0C8}
 table.pnl tr.net td.selm{background:#E3D8BA}
+.forecast{background:var(--card);border:1.5px solid var(--card-line);border-radius:4px;padding:14px 16px;display:grid;gap:10px}
+.fc-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px}
+.fc-ttl{font-size:14px;font-weight:800;color:var(--ink)}
+.fc-pct{font-size:clamp(20px,2.4vw,28px);font-weight:800;font-variant-numeric:tabular-nums}
+.fc-pct.ok{color:var(--good)}.fc-pct.warn{color:var(--focus)}.fc-pct.low{color:var(--bad)}
+.fc-track{position:relative;background:var(--track2);border-radius:5px;height:26px;overflow:hidden}
+.fc-fill{height:100%;border-radius:5px;min-width:3px}
+.fc-fill.ok{background:var(--bar-strong)}.fc-fill.warn{background:var(--focus)}.fc-fill.low{background:var(--bad)}
+.fc-100{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.5}
+.fc-sub{display:flex;flex-wrap:wrap;gap:4px 20px;font-size:12.5px;color:var(--ink-2);font-weight:600}
+.fc-sub b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
 </style></head><body>
 <div class="wrap">
 <header class="top">
@@ -191,6 +202,44 @@ function kpiAgg(dset,city){const a=aggStores(dset,city);if(!a.length)return null
   const pl=a.filter(x=>x.plan!=null),planSum=pl.reduce((s,x)=>s+x.plan,0),revPl=pl.reduce((s,x)=>s+x.rev,0);
   return{rev,margin,rent:rev?100*margin/rev:null,pct:planSum?100*revPl/planSum:null,
     sret:a.reduce((s,x)=>s+x.sret,0),scost:a.reduce((s,x)=>s+x.scost,0)};}
+const MONTHS_RU=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+function planForecast(city){
+  // прогноз выполнения месячного плана по темпу продаж текущего месяца (факт->конец месяца)
+  const latest=DAYS[DAYS.length-1], ym=latest.slice(0,7);
+  const y=+ym.slice(0,4), mo=+ym.slice(5,7);
+  const monthDays=new Date(y,mo,0).getDate();     // дней в месяце
+  const elapsed=+latest.slice(8,10);              // прошло дней (число последнего дня)
+  const monIdx=new Set(DAYS.map((d,i)=>d.slice(0,7)===ym?i:-1).filter(i=>i>=0));
+  const by={};
+  for(const s of S){ if(!monIdx.has(s.di))continue; if(city&&cityName(s.ci)!==city)continue;
+    const o=by[s.store]||(by[s.store]={rev:0,plan:null});
+    o.rev+=s.rev; if(s.plan!=null)o.plan=s.plan; }           // s.plan — дневной план (месячный/30)
+  let mtd=0,planMonth=0,n=0;
+  for(const k in by){const o=by[k]; if(o.plan!=null){mtd+=o.rev;planMonth+=o.plan*30;n++;}}
+  if(!n||planMonth<=0||!elapsed)return null;
+  const forecast=mtd/elapsed*monthDays;
+  return {mtd,forecast,planMonth,pct:forecast/planMonth*100,elapsed,monthDays,
+          rate:mtd/elapsed,month:MONTHS_RU[mo-1],latest,nStores:n};
+}
+function forecastBar(fc){
+  const pct=fc.pct, scaleMax=Math.max(120,Math.ceil(pct/10)*10);
+  const cls=pct>=100?"ok":(pct>=90?"warn":"low");
+  const t=el("div",{class:"fc-track"});
+  t.append(el("div",{class:"fc-fill "+cls,style:`width:${Math.max(1,Math.min(100,pct/scaleMax*100))}%`}));
+  t.append(el("div",{class:"fc-100",style:`left:${100/scaleMax*100}%`}));   // отметка 100% (план)
+  const left=fc.monthDays-fc.elapsed;
+  return el("div",{class:"forecast"},
+    el("div",{class:"fc-top"},
+      el("div",{class:"fc-ttl"},`Прогноз выполнения плана · ${fc.month}`+(st.city?" · "+st.city:"")),
+      el("div",{class:"fc-pct "+cls},Math.round(pct)+"%")),
+    t,
+    el("div",{class:"fc-sub"},
+      el("span",null,"Факт на "+dfmt(fc.latest)+": ",el("b",null,fmtRub(fc.mtd))),
+      el("span",null,"Прогноз месяца: ",el("b",null,fmtRub(fc.forecast))),
+      el("span",null,"План месяца: ",el("b",null,fmtRub(fc.planMonth))),
+      el("span",null,"Темп: ",el("b",null,fmtRub(fc.rate)+"/день")),
+      el("span",null,"Осталось дней: ",el("b",null,String(left)))));
+}
 function catAgg(dset,city,catF){
   const m={};PR.filter(p=>dset.includes(p.di)&&(city===""||cityName(p.ci)===city)&&(catF===""||CATS[p.ki]===catF)).forEach(p=>{
     const name=p.ki>=0?CATS[p.ki]:"—";const o=m[name]||(m[name]={cat:name,rev:0,margin:0});o.rev+=p.rev;o.margin+=p.margin});
@@ -296,6 +345,8 @@ function renderPoints(){
   const k=kpiAgg(dset,city);
   let kp=null;showDelta=false;
   if(isSingle()&&dset[0]>0){kp=kpiAgg([dset[0]-1],city);showDelta=!!kp}
+  const fc=planForecast(city);
+  if(fc) root.append(forecastBar(fc));
   const tiles=el("div",{class:"tiles"});
   tiles.append(tileK("Выручка",k?fmtRub(k.rev):"—",k&&k.rev,kp&&kp.rev));
   tiles.append(tileK("Маржа",k?fmtRub(k.margin):"—",k&&k.margin,kp&&kp.margin));
