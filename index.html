@@ -105,6 +105,7 @@ table.pnl td{text-align:right;font-variant-numeric:tabular-nums}
 table.pnl tr.rev td,table.pnl tr.rev th{font-weight:800;border-bottom:1.5px solid var(--card-line)}
 table.pnl tr.net td,table.pnl tr.net th{font-weight:800;border-top:1.5px solid var(--card-line);background:#EFE9DB}
 table.pnl td.neg{color:var(--bad)}
+table.pnl tr.grp th,table.pnl tr.grp td{background:#DCE8DF;font-weight:800;color:var(--frame-deep);border-top:1.5px solid var(--card-line);text-transform:uppercase;font-size:11.5px;letter-spacing:.04em}
 table.pnl th.selm,table.pnl td.selm{background:#EDE0C8}
 table.pnl tr.net td.selm{background:#E3D8BA}
 .forecast{background:var(--card);border:1.5px solid var(--card-line);border-radius:4px;padding:14px 16px;display:grid;gap:10px}
@@ -504,28 +505,35 @@ function renderPnl(){
   $("#scope-sub").textContent=st.pnlLevel+": "+entName+" · помесячно"+(PN.partial?" · (часть данных)":"");
 
   const S=PN.series[eid]||{},months=PN.months,items=PN.items;
+  // код статьи («10.3.1» -> [10,3,1]) для деления на доходы/расходы и сортировки по номеру
+  const codeOf=it=>{const m=String(it).match(/^(\d+(?:\.\d+)*)/);return m?m[1].split(".").map(Number):[9999]};
+  const cmpCode=(a,b)=>{const x=codeOf(a),y=codeOf(b);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d;}return 0;};
+  const income =items.filter(it=>it!==PN.net&&codeOf(it)[0]===1).sort(cmpCode);  // 1.x — выручка
+  const expense=items.filter(it=>it!==PN.net&&codeOf(it)[0]!==1).sort(cmpCode);  // всё остальное — расходы
   // таблица P&L
   const t=el("table",{class:"pnl"});
   const htr=el("tr");htr.append(el("th",{class:"it"},"Статья"));
   months.forEach(m=>htr.append(el("th",{class:m===st.pnlMonth?"selm":""},m.slice(0,3))));
   const thead=el("thead");thead.append(htr);t.append(thead);
   const tb=el("tbody");
-  items.forEach(it=>{
-    const tr=el("tr",{class:it===PN.rev?"rev":(it===PN.net?"net":"")});
+  const dataRow=it=>{const tr=el("tr",{class:it===PN.rev?"rev":(it===PN.net?"net":"")});
     tr.append(el("th",{class:"it",title:it},it));
     months.forEach(m=>{const v=(S[m]||{})[it];
       const cls=(m===st.pnlMonth?"selm ":"")+((v!=null&&v<0)?"neg":"");
       tr.append(el("td",{class:cls.trim()},v==null?"—":fmtRub0(v)));});
-    tb.append(tr);
-  });
+    return tr;};
+  const grpRow=title=>{const tr=el("tr",{class:"grp"});tr.append(el("th",{class:"it"},title));
+    months.forEach(m=>tr.append(el("td",{class:m===st.pnlMonth?"selm":""},"")));return tr;};
+  tb.append(grpRow("Доходы")); income.forEach(it=>tb.append(dataRow(it)));
+  tb.append(grpRow("Расходы")); expense.forEach(it=>tb.append(dataRow(it)));
+  tb.append(dataRow(PN.net));
   t.append(tb);
   const wrap=el("div",{class:"tb-wrap"});wrap.append(t);
   root.append(cardWrap("P&L по месяцам, ₽ (выделен "+st.pnlMonth+")",null,wrap));
 
   // графики
   const sm=S[st.pnlMonth]||{};
-  const exp=items.filter(it=>it!==PN.rev&&it!==PN.net).map(it=>({label:it,value:sm[it]||0}))
-    .filter(x=>x.value>0).sort((a,b)=>b.value-a.value).slice(0,12);
+  const exp=expense.map(it=>({label:it,value:sm[it]||0})).filter(x=>x.value>0);  // только расходы, по номеру статьи
   const revPts=months.map(m=>({lab:m.slice(0,3),full:m,v:(S[m]||{})[PN.rev]||0}));
   const expPts=months.map(m=>{const r=(S[m]||{})[PN.rev],n=(S[m]||{})[PN.net];
     return{lab:m.slice(0,3),full:m,v:(r!=null&&n!=null)?(r-n):0}});
