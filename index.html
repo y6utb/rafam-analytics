@@ -12,7 +12,7 @@
   --ground:#EFE9DB;--card:#F7F3E9;--card-line:#2B5A45;
   --ink:#1F4535;--ink-2:#4E6A5C;--muted:#7F9288;
   --grid:#DED7C6;--track2:#EAE3D2;
-  --bar:#6FA595;--bar-strong:#2F6B50;--plan:#B9C6BE;
+  --bar:#6FA595;--bar-strong:#2F6B50;--plan:#B9C6BE;--exp:#C08271;
   --good:#2F7A4C;--bad:#A8432E;--bad-wash:#F4DDD5;--good-wash:#D9EBDD;
   --focus:#B8672A;--font:"Manrope","Segoe UI",system-ui,sans-serif;
 }
@@ -66,6 +66,7 @@ main.panel{background:var(--ground);border-radius:10px;padding:18px;display:grid
 .bar-track{background:var(--track2);border-radius:3px;height:16px;position:relative;overflow:hidden}
 .bar-fill{height:100%;background:var(--bar);border-radius:3px;min-width:2px}
 .bar-fill.strong{background:var(--bar-strong)}
+.bar-fill.exp{background:var(--exp)}
 .bar-mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--bad)}
 .bar-row .vl{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink);white-space:nowrap}
 .bar-row .vl small{color:var(--ink-2);font-weight:600}
@@ -274,7 +275,7 @@ function subInfo(){return el("div",{class:"sub flat"},isSingle()?"нет пре�
 function tile(lab,valHtml,sub){const t=el("div",{class:"tile"});t.append(el("div",{class:"lab"},lab),el("div",{class:"val",html:valHtml}));if(sub)t.append(sub);return t}
 function tileK(lab,valHtml,cur,prev,kind){return tile(lab,valHtml,showDelta?deltaSub(cur,prev,kind):subInfo())}
 
-function bars(items,{fmt=fmtRub0,unit="",strong=false,tipUnit=null}={}){
+function bars(items,{fmt=fmtRub0,unit="",strong=false,tipUnit=null,cls=""}={}){
   if(!items.length)return el("div",{class:"empty"},"нет данных");
   const box=el("div",{class:"bars"});
   const max=Math.max(...items.map(i=>Math.abs(i.value)),1);
@@ -282,7 +283,7 @@ function bars(items,{fmt=fmtRub0,unit="",strong=false,tipUnit=null}={}){
     const row=el("div",{class:"bar-row"});
     row.append(el("div",{class:"nm",title:it.label},it.label));
     const tr=el("div",{class:"bar-track"});
-    const fl=el("div",{class:"bar-fill"+(strong?" strong":"")});fl.style.width=(100*Math.abs(it.value)/max)+"%";
+    const fl=el("div",{class:"bar-fill"+(strong?" strong":"")+(cls?" "+cls:"")});fl.style.width=(100*Math.abs(it.value)/max)+"%";
     if(it.mark!=null){const m=el("div",{class:"bar-mark"});m.style.left=Math.min(100,100*it.mark/max)+"%";tr.append(fl,m)}else tr.append(fl);
     row.append(tr,el("div",{class:"vl",html:fmt(it.value)+unit+(it.note?` <small>${it.note}</small>`:"")}));
     let th=`<div class="t-name">${it.label}</div><b>${fmt(it.value)+unit}</b>`;
@@ -534,7 +535,8 @@ function renderPnl(){
 
   // графики
   const sm=S[st.pnlMonth]||{};
-  const exp=expense.map(it=>({label:it,value:sm[it]||0})).filter(x=>x.value>0).sort((a,b)=>b.value-a.value);  // расходы по сумме, по убыванию
+  const incStr=income.filter(it=>it!==PN.rev).map(it=>({label:it,value:sm[it]||0})).filter(x=>x.value>0).sort((a,b)=>b.value-a.value);  // доходы по статьям
+  const exp=expense.map(it=>({label:it,value:sm[it]||0})).filter(x=>x.value>0).sort((a,b)=>b.value-a.value);  // расходы по статьям, по убыванию
   const revPts=months.map(m=>({lab:m.slice(0,3),full:m,v:(S[m]||{})[PN.rev]||0}));
   const expPts=months.map(m=>{const r=(S[m]||{})[PN.rev],n=(S[m]||{})[PN.net];
     return{lab:m.slice(0,3),full:m,v:(r!=null&&n!=null)?(r-n):0}});
@@ -544,7 +546,10 @@ function renderPnl(){
   g.append(cardWrap("Выручка по месяцам","приходы",line(revPts)));
   g.append(cardWrap("Расходы по месяцам","выручка минус чистая прибыль",line(expPts)));
   root.append(g);
-  root.append(cardWrap("Структура расходов — "+st.pnlMonth,"по статьям за выбранный месяц",bars(exp,{strong:true})));
+  const gs=el("div",{class:"g2"});
+  gs.append(cardWrap("Структура доходов — "+st.pnlMonth,"по статьям за выбранный месяц",bars(incStr,{strong:true})));
+  gs.append(cardWrap("Структура расходов — "+st.pnlMonth,"по статьям за выбранный месяц",bars(exp,{cls:"exp"})));
+  root.append(gs);
   root.append(cardWrap("Чистая прибыль УК по месяцам",null,line(netPts)));
 }
 
