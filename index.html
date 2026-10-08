@@ -108,7 +108,12 @@ table.pnl td{text-align:right;font-variant-numeric:tabular-nums}
 table.pnl tr.rev td,table.pnl tr.rev th{font-weight:800;border-bottom:1.5px solid var(--card-line)}
 table.pnl tr.net td,table.pnl tr.net th{font-weight:800;border-top:1.5px solid var(--card-line);background:#EFE9DB}
 table.pnl td.neg{color:var(--bad)}
-table.pnl tr.grp th,table.pnl tr.grp td{background:#DCE8DF;font-weight:800;color:var(--frame-deep);border-top:1.5px solid var(--card-line);text-transform:uppercase;font-size:11.5px;letter-spacing:.04em}
+table.pnl.inc{border-top:2.5px solid var(--frame)}
+table.pnl.inc thead th{background:#D7E7DC}
+table.pnl.inc tr.rev td,table.pnl.inc tr.rev th{color:var(--frame-deep)}
+table.pnl.exp{border-top:2.5px solid var(--exp)}
+table.pnl.exp thead th{background:#F1DBD3}
+table.pnl.exp tr.net td,table.pnl.exp tr.net th{color:var(--frame-deep);background:#DCE8DF}
 table.pnl th.selm,table.pnl td.selm{background:#EDE0C8}
 table.pnl tr.net td.selm{background:#E3D8BA}
 .forecast{background:var(--card);border:1.5px solid var(--card-line);border-radius:4px;padding:14px 16px;display:grid;gap:10px}
@@ -513,25 +518,24 @@ function renderPnl(){
   const income =items.filter(it=>it!==PN.net&&codeOf(it)[0]===1).sort(cmpCode);  // 1.x — выручка
   const expense=items.filter(it=>it!==PN.net&&codeOf(it)[0]!==1).sort(cmpCode);  // всё остальное — расходы
   // таблица P&L
-  const t=el("table",{class:"pnl"});
-  const htr=el("tr");htr.append(el("th",{class:"it"},"Статья"));
-  months.forEach(m=>htr.append(el("th",{class:m===st.pnlMonth?"selm":""},m.slice(0,3))));
-  const thead=el("thead");thead.append(htr);t.append(thead);
-  const tb=el("tbody");
   const dataRow=it=>{const tr=el("tr",{class:it===PN.rev?"rev":(it===PN.net?"net":"")});
     tr.append(el("th",{class:"it",title:it},it));
     months.forEach(m=>{const v=(S[m]||{})[it];
       const cls=(m===st.pnlMonth?"selm ":"")+((v!=null&&v<0)?"neg":"");
       tr.append(el("td",{class:cls.trim()},v==null?"—":fmtRub0(v)));});
     return tr;};
-  const grpRow=title=>{const tr=el("tr",{class:"grp"});tr.append(el("th",{class:"it"},title));
-    months.forEach(m=>tr.append(el("td",{class:m===st.pnlMonth?"selm":""},"")));return tr;};
-  tb.append(grpRow("Доходы")); income.forEach(it=>tb.append(dataRow(it)));
-  tb.append(grpRow("Расходы")); expense.forEach(it=>tb.append(dataRow(it)));
-  tb.append(dataRow(PN.net));
-  t.append(tb);
-  const wrap=el("div",{class:"tb-wrap"});wrap.append(t);
-  root.append(cardWrap("P&L по месяцам, ₽ (выделен "+st.pnlMonth+")",null,wrap));
+  const mkTable=(clsName,rowItems,trailNet)=>{
+    const t=el("table",{class:"pnl "+clsName});
+    const htr=el("tr");htr.append(el("th",{class:"it"},"Статья"));
+    months.forEach(m=>htr.append(el("th",{class:m===st.pnlMonth?"selm":""},m.slice(0,3))));
+    const thead=el("thead");thead.append(htr);t.append(thead);
+    const tb=el("tbody");
+    rowItems.forEach(it=>tb.append(dataRow(it)));
+    if(trailNet)tb.append(dataRow(PN.net));
+    t.append(tb);
+    const w=el("div",{class:"tb-wrap"});w.append(t);return w;};
+  root.append(cardWrap("Доходы по месяцам, ₽",null,mkTable("inc",income,false)));
+  root.append(cardWrap("Расходы по месяцам, ₽ (выделен "+st.pnlMonth+", итог — чистая прибыль УК)",null,mkTable("exp",expense,true)));
 
   // графики
   const sm=S[st.pnlMonth]||{};
