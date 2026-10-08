@@ -320,7 +320,7 @@ function pie(items){
   const wrap=el("div",{class:"pie-wrap"});wrap.append(svg,leg);return wrap;
 }
 
-function line(pts){
+function line(pts,color="#2F6B50"){
   if(pts.length<2)return el("div",{class:"empty"},"нужно ≥2 дней");
   const W=640,H=200,L=58,R=14,T=14,B=28;
   const max=Math.max(...pts.map(p=>p.v)),min=Math.min(...pts.map(p=>p.v),0);
@@ -331,8 +331,8 @@ function line(pts){
     const ln=document.createElementNS(NS,"line");ln.setAttribute("x1",L);ln.setAttribute("x2",W-R);ln.setAttribute("y1",y);ln.setAttribute("y2",y);ln.setAttribute("stroke","#DED7C6");ln.setAttribute("stroke-width",".7");svg.append(ln);
     const tx=document.createElementNS(NS,"text");tx.setAttribute("x",L-6);tx.setAttribute("y",y+3);tx.setAttribute("text-anchor","end");tx.setAttribute("font-size","11");tx.setAttribute("fill","#7F9288");tx.textContent=fmtRub0(v);svg.append(tx)}
   let d="";pts.forEach((p,i)=>d+=(i?"L":"M")+X(i)+" "+Y(p.v)+" ");
-  const path=document.createElementNS(NS,"path");path.setAttribute("d",d);path.setAttribute("fill","none");path.setAttribute("stroke","#2F6B50");path.setAttribute("stroke-width","2.5");path.setAttribute("stroke-linejoin","round");svg.append(path);
-  pts.forEach((p,i)=>{const c=document.createElementNS(NS,"circle");c.setAttribute("cx",X(i));c.setAttribute("cy",Y(p.v));c.setAttribute("r","4");c.setAttribute("fill","#2F6B50");c.style.cursor="default";
+  const path=document.createElementNS(NS,"path");path.setAttribute("d",d);path.setAttribute("fill","none");path.setAttribute("stroke",color);path.setAttribute("stroke-width","2.5");path.setAttribute("stroke-linejoin","round");svg.append(path);
+  pts.forEach((p,i)=>{const c=document.createElementNS(NS,"circle");c.setAttribute("cx",X(i));c.setAttribute("cy",Y(p.v));c.setAttribute("r","4");c.setAttribute("fill",color);c.style.cursor="default";
     bindTip(c,`<div class="t-name">${p.full}</div><b>${fmtRub(p.v)}</b>`);svg.append(c);
     const tx=document.createElementNS(NS,"text");tx.setAttribute("x",X(i));tx.setAttribute("y",H-10);tx.setAttribute("text-anchor","middle");tx.setAttribute("font-size","11");tx.setAttribute("fill","#4E6A5C");tx.textContent=p.lab;svg.append(tx)});
   return svg;
@@ -548,7 +548,7 @@ function renderPnl(){
   // приходы и расходы — отдельными карточками рядом (слева выручка, справа расходы)
   const g=el("div",{class:"g2"});
   g.append(cardWrap("Выручка по месяцам","приходы",line(revPts)));
-  g.append(cardWrap("Расходы по месяцам","выручка минус чистая прибыль",line(expPts)));
+  g.append(cardWrap("Расходы по месяцам","выручка минус чистая прибыль",line(expPts,"#C08271")));
   root.append(g);
   const gs=el("div",{class:"g2"});
   gs.append(cardWrap("Структура доходов — "+st.pnlMonth,"по статьям за выбранный месяц",bars(incStr,{strong:true})));
