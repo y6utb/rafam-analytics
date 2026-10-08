@@ -42,6 +42,7 @@ main.panel{background:var(--ground);border-radius:10px;padding:18px;display:grid
 .scope-line h2{margin:0;font-size:19px;font-weight:800}
 .scope-line p{margin:0;color:var(--ink-2);font-size:13px}
 .tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.tiles.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:860px){.tiles{grid-template-columns:repeat(2,1fr)}}
 .tile{background:var(--card);border:1.5px solid var(--card-line);border-radius:4px;padding:12px 14px;display:grid;gap:3px;align-content:start;min-width:0}
 .tile .lab{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.25}
@@ -512,6 +513,17 @@ function renderPnl(){
   $("#scope-sub").textContent=st.pnlLevel+": "+entName+" · помесячно"+(PN.partial?" · (часть данных)":"");
 
   const S=PN.series[eid]||{},months=PN.months,items=PN.items;
+  // KPI сверху — по выбранному месяцу и объекту
+  {const km=S[st.pnlMonth]||{},rev=km[PN.rev],net=km[PN.net];
+   const expTot=(rev!=null&&net!=null)?(rev-net):null, rent=(rev)?100*net/rev:null;
+   const tile=(lab,valHtml,color)=>el("div",{class:"tile"},el("div",{class:"lab"},lab+" · "+st.pnlMonth),
+     el("div",{class:"val",html:valHtml,...(color?{style:"color:"+color}:{})}));
+   const tl=el("div",{class:"tiles k4"});
+   tl.append(tile("Выручка",rev==null?"—":fmtRub(rev)));
+   tl.append(tile("Расходы",expTot==null?"—":fmtRub(expTot),"#A8432E"));
+   tl.append(tile("Чистая прибыль УК",net==null?"—":fmtRub(net),net!=null&&net<0?"#A8432E":"#2F7A4C"));
+   tl.append(tile("Рентабельность",rent==null?"—":rent.toFixed(1)+"<small>%</small>",rent!=null&&rent<0?"#A8432E":"#2F7A4C"));
+   root.append(tl);}
   // код статьи («10.3.1» -> [10,3,1]) для деления на доходы/расходы и сортировки по номеру
   const codeOf=it=>{const m=String(it).match(/^(\d+(?:\.\d+)*)/);return m?m[1].split(".").map(Number):[9999]};
   const cmpCode=(a,b)=>{const x=codeOf(a),y=codeOf(b);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d;}return 0;};
