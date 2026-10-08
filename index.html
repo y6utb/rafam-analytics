@@ -369,6 +369,10 @@ function renderPoints(){
   tiles.append(tileK("Остатки, себес.",k?fmtRub(k.scost):"—",k&&k.scost,kp&&kp.scost));
   root.append(tiles);
 
+  root.append(el("div",{class:"sect"},"Динамика"));
+  const dyn=DAYS.map((iso,i)=>{const kk=kpiAgg([i],city);return{lab:dfmt(iso).slice(0,5),full:dfmt(iso),v:kk?kk.rev:0}});
+  root.append(cardWrap("Динамика выручки по дням",city?"город: "+city:"по всей сети",line(dyn)));
+
   root.append(el("div",{class:"sect"},"Продажи"));
   const g1=el("div",{class:"g2"});
   g1.append(cardWrap("Выручка по точкам — топ-15",null,bars(topN(a,"rev",15).map(s=>({label:s.store,value:s.rev})),{strong:true})));
@@ -394,21 +398,11 @@ function renderPoints(){
   g3.append(cardWrap("Маржинальность по категориям",null,bars(cr.filter(c=>c.mpct!=null).map(c=>({label:c.cat,value:c.mpct})),{fmt:v=>v.toFixed(1),unit:" %"})));
   root.append(g3);
 
-  root.append(el("div",{class:"sect"},"Склад и аномалии"));
+  root.append(el("div",{class:"sect"},"Склад"));
   const g4=el("div",{class:"g2"});
   g4.append(cardWrap("Остатки в рознице по точкам — топ-15",null,bars(topN(a,"sret",15).map(s=>({label:s.store,value:s.sret})),{strong:true})));
   g4.append(cardWrap("Остатки в себестоимости по точкам — топ-15",null,bars(topN(a,"scost",15).map(s=>({label:s.store,value:s.scost})),{strong:true})));
   root.append(g4);
-  const lastD=Math.max(...dset);
-  const an=AN.filter(x=>x.di===lastD&&(city===""||cityName(x.ci)===city)&&(cat===""||CATS[x.ki]===cat)).slice(0,100);
-  root.append(cardWrap("Аномалии: отрицательные остатки",dset.length>1?"на последний день периода":null,
-    an.length?sortTable([
-      {h:"Точка",key:"store",cell:x=>tdnm(x.store)},
-      {h:"Товар",key:"prod",cell:x=>tdnm(x.prod)},
-      {h:"Остаток",key:"qty",cls:"r",num:1,cell:x=>td(fmtMl(x.qty),"r")},
-      {h:"Сумма, розница",key:"ret",cls:"r",num:1,cell:x=>td(fmtRub0(x.ret),"r")},
-      {h:"Сумма, себес.",key:"cost",cls:"r",num:1,cell:x=>td(fmtRub0(x.cost),"r")},
-    ],an,{key:"ret",dir:1}):el("div",{class:"empty"},"отрицательных остатков нет")));
 
   root.append(cardWrap("Сводка по точкам",null,sortTable([
     {h:"Точка",key:"store",cell:s=>tdnm(s.store)},
@@ -422,9 +416,17 @@ function renderPoints(){
     {h:"Остатки, себес.",key:"scost",cls:"r",num:1,cell:s=>td(fmtRub0(s.scost),"r")},
   ],a,{key:"rev",dir:-1})));
 
-  root.append(el("div",{class:"sect"},"Динамика"));
-  const dyn=DAYS.map((iso,i)=>{const kk=kpiAgg([i],city);return{lab:dfmt(iso).slice(0,5),full:dfmt(iso),v:kk?kk.rev:0}});
-  root.append(cardWrap("Динамика выручки по дням",city?"город: "+city:"по всей сети",line(dyn)));
+  root.append(el("div",{class:"sect"},"Аномалии"));
+  const lastD=Math.max(...dset);
+  const an=AN.filter(x=>x.di===lastD&&(city===""||cityName(x.ci)===city)&&(cat===""||CATS[x.ki]===cat)).slice(0,100);
+  root.append(cardWrap("Аномалии: отрицательные остатки",dset.length>1?"на последний день периода":null,
+    an.length?sortTable([
+      {h:"Точка",key:"store",cell:x=>tdnm(x.store)},
+      {h:"Товар",key:"prod",cell:x=>tdnm(x.prod)},
+      {h:"Остаток",key:"qty",cls:"r",num:1,cell:x=>td(fmtMl(x.qty),"r")},
+      {h:"Сумма, розница",key:"ret",cls:"r",num:1,cell:x=>td(fmtRub0(x.ret),"r")},
+      {h:"Сумма, себес.",key:"cost",cls:"r",num:1,cell:x=>td(fmtRub0(x.cost),"r")},
+    ],an,{key:"ret",dir:1}):el("div",{class:"empty"},"отрицательных остатков нет")));
 }
 
 function renderCities(){
@@ -524,13 +526,16 @@ function renderPnl(){
   const sm=S[st.pnlMonth]||{};
   const exp=items.filter(it=>it!==PN.rev&&it!==PN.net).map(it=>({label:it,value:sm[it]||0}))
     .filter(x=>x.value>0).sort((a,b)=>b.value-a.value).slice(0,12);
+  const revPts=months.map(m=>({lab:m.slice(0,3),full:m,v:(S[m]||{})[PN.rev]||0}));
   const expPts=months.map(m=>{const r=(S[m]||{})[PN.rev],n=(S[m]||{})[PN.net];
     return{lab:m.slice(0,3),full:m,v:(r!=null&&n!=null)?(r-n):0}});
   const netPts=months.map(m=>({lab:m.slice(0,3),full:m,v:(S[m]||{})[PN.net]||0}));
+  // приходы и расходы — отдельными карточками рядом (слева выручка, справа расходы)
   const g=el("div",{class:"g2"});
-  g.append(cardWrap("Структура расходов — "+st.pnlMonth,"по статьям за выбранный месяц",bars(exp,{strong:true})));
+  g.append(cardWrap("Выручка по месяцам","приходы",line(revPts)));
   g.append(cardWrap("Расходы по месяцам","выручка минус чистая прибыль",line(expPts)));
   root.append(g);
+  root.append(cardWrap("Структура расходов — "+st.pnlMonth,"по статьям за выбранный месяц",bars(exp,{strong:true})));
   root.append(cardWrap("Чистая прибыль УК по месяцам",null,line(netPts)));
 }
 
