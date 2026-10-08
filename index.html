@@ -382,6 +382,17 @@ function renderPoints(){
   const cr=catAgg(dset,city,cat);
   g1.append(cardWrap("Выручка по категориям",null,pie(cr.map(c=>({label:c.cat,value:c.rev})))));
   root.append(g1);
+  root.append(cardWrap("Сводка по точкам",null,sortTable([
+    {h:"Точка",key:"store",cell:s=>tdnm(s.store)},
+    {h:"Город",key:"cityn",cell:s=>td(s.cityn)},
+    {h:"Выручка",key:"rev",cls:"r",num:1,cell:s=>td(fmtRub0(s.rev),"r")},
+    {h:"Маржа",key:"margin",cls:"r",num:1,cell:s=>td(fmtRub0(s.margin),"r")},
+    {h:"Маржа %",key:"mpct",cls:"r",num:1,cell:s=>td(s.mpct!=null?s.mpct.toFixed(1):null,"r")},
+    {h:"План/день",key:"plan",cls:"r",num:1,cell:s=>td(s.plan!=null?fmtRub0(s.plan):null,"r")},
+    {h:"% плана",key:"pct",cls:"r",num:1,cell:s=>pctCell(s.pct)},
+    {h:"Остатки, розница",key:"sret",cls:"r",num:1,cell:s=>td(fmtRub0(s.sret),"r")},
+    {h:"Остатки, себес.",key:"scost",cls:"r",num:1,cell:s=>td(fmtRub0(s.scost),"r")},
+  ],a,{key:"rev",dir:-1})));
 
   const pf=a.filter(s=>s.plan!=null);
   if(pf.length){
@@ -406,18 +417,6 @@ function renderPoints(){
   g4.append(cardWrap("Остатки в рознице по точкам — топ-15",null,bars(topN(a,"sret",15).map(s=>({label:s.store,value:s.sret})),{strong:true})));
   g4.append(cardWrap("Остатки в себестоимости по точкам — топ-15",null,bars(topN(a,"scost",15).map(s=>({label:s.store,value:s.scost})),{strong:true})));
   root.append(g4);
-
-  root.append(cardWrap("Сводка по точкам",null,sortTable([
-    {h:"Точка",key:"store",cell:s=>tdnm(s.store)},
-    {h:"Город",key:"cityn",cell:s=>td(s.cityn)},
-    {h:"Выручка",key:"rev",cls:"r",num:1,cell:s=>td(fmtRub0(s.rev),"r")},
-    {h:"Маржа",key:"margin",cls:"r",num:1,cell:s=>td(fmtRub0(s.margin),"r")},
-    {h:"Маржа %",key:"mpct",cls:"r",num:1,cell:s=>td(s.mpct!=null?s.mpct.toFixed(1):null,"r")},
-    {h:"План/день",key:"plan",cls:"r",num:1,cell:s=>td(s.plan!=null?fmtRub0(s.plan):null,"r")},
-    {h:"% плана",key:"pct",cls:"r",num:1,cell:s=>pctCell(s.pct)},
-    {h:"Остатки, розница",key:"sret",cls:"r",num:1,cell:s=>td(fmtRub0(s.sret),"r")},
-    {h:"Остатки, себес.",key:"scost",cls:"r",num:1,cell:s=>td(fmtRub0(s.scost),"r")},
-  ],a,{key:"rev",dir:-1})));
 
   root.append(el("div",{class:"sect"},"Аномалии"));
   const lastD=Math.max(...dset);
