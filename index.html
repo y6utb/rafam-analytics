@@ -49,7 +49,9 @@ main.panel{background:var(--ground);border-radius:10px;padding:18px;display:grid
 .tile .val small{font-size:.5em;font-weight:700;color:var(--ink-2);margin-left:3px}
 .tile .sub{font-size:12px;font-weight:700}
 .tile .sub.up{color:var(--good)}.tile .sub.down{color:var(--bad)}.tile .sub.flat{color:var(--ink-2)}
-.sect{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:.02em;margin:4px 0 -4px}
+.sect{display:flex;align-items:center;gap:11px;font-size:13px;font-weight:800;color:var(--frame-deep);letter-spacing:.05em;text-transform:uppercase;margin:16px 0 2px}
+.sect::before{content:"";width:4px;height:14px;background:var(--frame);border-radius:2px;flex:none}
+.sect::after{content:"";flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--frame) 0%,rgba(47,107,80,.25) 70%,transparent 100%)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:0}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;min-width:0}
 @media(max-width:860px){.g2,.g3{grid-template-columns:1fr}}
@@ -533,7 +535,7 @@ function renderPnl(){
 
   // графики
   const sm=S[st.pnlMonth]||{};
-  const exp=expense.map(it=>({label:it,value:sm[it]||0})).filter(x=>x.value>0);  // только расходы, по номеру статьи
+  const exp=expense.map(it=>({label:it,value:sm[it]||0})).filter(x=>x.value>0).sort((a,b)=>b.value-a.value);  // расходы по сумме, по убыванию
   const revPts=months.map(m=>({lab:m.slice(0,3),full:m,v:(S[m]||{})[PN.rev]||0}));
   const expPts=months.map(m=>{const r=(S[m]||{})[PN.rev],n=(S[m]||{})[PN.net];
     return{lab:m.slice(0,3),full:m,v:(r!=null&&n!=null)?(r-n):0}});
