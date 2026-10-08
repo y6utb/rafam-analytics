@@ -43,7 +43,7 @@ main.panel{background:var(--ground);border-radius:10px;padding:18px;display:grid
 .scope-line p{margin:0;color:var(--ink-2);font-size:13px}
 .tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
 .tiles.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
-@media(max-width:860px){.tiles{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:860px){.tiles,.tiles.k4{grid-template-columns:repeat(2,1fr)}}
 .tile{background:var(--card);border:1.5px solid var(--card-line);border-radius:4px;padding:12px 14px;display:grid;gap:3px;align-content:start;min-width:0}
 .tile .lab{font-size:12.5px;font-weight:700;color:var(--ink);line-height:1.25}
 .tile .val{font-size:clamp(19px,2.1vw,26px);font-weight:800;line-height:1.1;color:var(--ink);white-space:nowrap}
@@ -120,7 +120,7 @@ table.pnl tr.net td.selm{background:#E3D8BA}
 .forecast{background:var(--card);border:1.5px solid var(--card-line);border-radius:4px;padding:14px 16px;display:grid;gap:10px}
 .fc-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px}
 .fc-ttl{font-size:14px;font-weight:800;color:var(--ink)}
-.fc-pct{font-size:clamp(20px,2.4vw,28px);font-weight:800;font-variant-numeric:tabular-nums}
+.fc-pct{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
 .fc-pct.ok{color:var(--good)}.fc-pct.warn{color:var(--focus)}.fc-pct.low{color:var(--bad)}
 .fc-barwrap{position:relative;padding-top:15px}
 .fc-track{position:relative;background:var(--track2);border-radius:5px;height:26px;overflow:hidden}
@@ -132,7 +132,7 @@ table.pnl tr.net td.selm{background:#E3D8BA}
 .fc-100{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed #fff;filter:drop-shadow(0 0 1px rgba(0,0,0,.65));z-index:3}
 .fc-planlbl{position:absolute;top:0;transform:translateX(-50%);font-size:10.5px;font-weight:800;color:var(--ink-2);white-space:nowrap;letter-spacing:.02em}
 .fc-nums{display:flex;align-items:baseline;gap:12px}
-.fc-fact{font-size:14px;font-weight:800;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.fc-fact{font-size:13px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
 details.card>summary{cursor:pointer;list-style:none;font-size:15px;font-weight:800;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px}
 details.card>summary::-webkit-details-marker{display:none}
 details.card>summary::before{content:"▸";color:var(--frame);font-size:12px;transition:transform .15s}
